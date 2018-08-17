@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thorn.springboot.dao.userMapper">
+    <resultMap id="BaseResultMap" type="com.thorn.springboot.model.user">
+        <constructor>
+            <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="password" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="age" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="gender" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="identity" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="level" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="photo" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="regdate" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+            <arg column="fans" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="myPostnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ResultMapWithBLOBs" type="com.thorn.springboot.model.userWithBLOBs">
+        <constructor>
+            <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="password" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="age" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="gender" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="identity" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="level" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="photo" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="regdate" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+            <arg column="fans" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="myPostnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="attention" javaType="java.lang.String" jdbcType="LONGVARCHAR"/>
+            <arg column="history" javaType="java.lang.String" jdbcType="LONGVARCHAR"/>
+            <arg column="collections" javaType="java.lang.String" jdbcType="LONGVARCHAR"/>
+        </constructor>
+    </resultMap>
+    <sql id="Blob_Column_List">
+        attention, history, collections
+    </sql>
+    <resultMap id="SimpleInfo" type="com.thorn.springboot.model.user">
+        <constructor>
+            <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="photo" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="myPostnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        insert into user (username, password, name,
+        age, gender, identity,
+        level, photo, regdate,
+        fans, attention, history,
+        collections)
+        values (#{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
+        #{name,jdbcType=VARCHAR},
+        #{age,jdbcType=INTEGER}, #{gender,jdbcType=VARCHAR}, #{identity,jdbcType=VARCHAR},
+        #{level,jdbcType=INTEGER}, #{photo,jdbcType=VARCHAR}, #{regdate,jdbcType=TIMESTAMP},
+        #{fans,jdbcType=INTEGER}, #{attention,jdbcType=LONGVARCHAR},
+        #{history,jdbcType=LONGVARCHAR},
+        #{collections,jdbcType=LONGVARCHAR})
+    </insert>
+
+    <select id="getSimpleInfo" resultMap="SimpleInfo" parameterType="string">
+        SELECT username,name,photo,myPostnum from user where username =#{arg0}
+    </select>
+
+    <resultMap id="UserResultMap" type="com.thorn.springboot.model.user">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="name" property="name"/>
+        <result column="age" property="age"/>
+        <result column="gender" property="gender"/>
+        <result column="identity" property="identity"/>
+        <result column="level" property="level"/>
+        <result column="photo" property="photo"/>
+        <result column="regdate" property="regdate"/>
+        <result column="attentionnum" property="attentionnum"/>
+        <result column="history" property="history"/>
+        <result column="attention" property="attention"/>
+        <result column="collections" property="collections"/>
+    </resultMap>
+
+    <select id="login" resultMap="ResultMapWithBLOBs" parameterType="String">
+        select * from user where username=#{username}
+    </select>
+
+    <update id="updateHistory" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set history=#{history} where username=#{username}
+    </update>
+
+    <update id="updateMyPostnum" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set myPostnum=#{myPostnum} where username=#{username}
+    </update>
+
+    <update id="updateCollections" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set collections=#{collections} where username=#{username}
+    </update>
+
+    <insert id="InsertUser" parameterType="com.thorn.springboot.model.userWithBLOBs"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        insert into user(username,password,identity,name)
+        values(#{username},#{password},#{identity},#{name})
+    </insert>
+
+    <select id="findAllUsers" resultMap="ResultMapWithBLOBs"
+            parameterType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user
+    </select>
+
+    <select id="findAllUser" resultMap="ResultMapWithBLOBs"
+            parameterType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where level!=0
+    </select>
+
+    <select id="findsomeUser" resultMap="ResultMapWithBLOBs"
+            parameterType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where name like #{name}
+    </select>
+
+    <select id="findusername" resultMap="ResultMapWithBLOBs" parameterType="String">
+        select * from user where username=#{username}
+    </select>
+
+    <update id="updateUser" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set name=#{name},age=#{age},identity=#{identity},gender=#{gender} where
+        username=#{username}
+    </update>
+
+    <update id="updatePwd" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set password=#{password} where username=#{username}
+    </update>
+
+    <update id="updatePhoto" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        update user set photo=#{photo} where username=#{username}
+    </update>
+
+    <select id="getUserByPage" resultType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where level!=0 limit #{arg0},#{arg1}
+    </select>
+
+    <select id="getUserByPageName" resultType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where name like #{arg0} limit #{arg1},#{arg2}
+    </select>
+
+    <select id="findoneID" resultType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where identity=#{identity}
+    </select>
+
+    <select id="findoneIDAndName" resultType="com.thorn.springboot.model.userWithBLOBs">
+        select * from user where name!=#{arg0} and identity=#{arg1}
+    </select>
+
+    <update id="deleteUser" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        delete from user where username=#{username}
+    </update>
+
+    <update id="updatePostnum" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        UPDATE USER SET mypostnum=mypostnum-1 WHERE username=#{username}
+    </update>
+
+    <update id="updateCollect" parameterType="com.thorn.springboot.model.userWithBLOBs">
+        UPDATE USER SET collections=#{arg0} WHERE username=#{arg1}
+    </update>
+</mapper>

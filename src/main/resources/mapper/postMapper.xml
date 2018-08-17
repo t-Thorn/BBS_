@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thorn.springboot.dao.postMapper">
+    <resultMap id="BaseResultMap" type="com.thorn.springboot.model.post">
+        <constructor>
+            <arg column="id" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="title" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="type" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="grade" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="posttime" javaType="java.util.Date" jdbcType="VARCHAR"/>
+            <arg column="postnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="lastposttime" javaType="java.util.Date" jdbcType="VARCHAR"/>
+            <arg column="views" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="collectionnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        </constructor>
+        <association property="user" column="username"
+                     javaType="com.thorn.springboot.model.user" foreignColumn="username">
+            <id property="username" column="username"/>
+            <result column="name" property="name"/>
+            <result column="photo" property="photo"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="PostResultMapSimple" type="com.thorn.springboot.model.post">
+        <constructor>
+            <arg column="id" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="title" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="views" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="postnum" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.thorn.springboot.model.post">
+        insert into post (title, username,type, posttime,lastposttime)
+        values (#{title}, #{username},#{type}, #{posttime},#{lastposttime}
+        );
+    </insert>
+
+    <insert id="insertSelective" parameterType="com.thorn.springboot.model.post">
+        insert into post
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="title != null">
+                title,
+            </if>
+            <if test="username != null">
+                username,
+            </if>
+            <if test="type != null">
+                type,
+            </if>
+            <if test="grade != null">
+                grade,
+            </if>
+            <if test="posttime != null">
+                posttime,
+            </if>
+            <if test="postnum != null">
+                postnum,
+            </if>
+            <if test="lastposttime != null">
+                lastposttime,
+            </if>
+            <if test="views != null">
+                views,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="title != null">
+                #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="username != null">
+                #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="type != null">
+                #{type,jdbcType=INTEGER},
+            </if>
+            <if test="grade != null">
+                #{grade,jdbcType=INTEGER},
+            </if>
+            <if test="posttime != null">
+                #{posttime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="postnum != null">
+                #{postnum,jdbcType=INTEGER},
+            </if>
+            <if test="lastposttime != null">
+                #{lastposttime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="views != null">
+                #{views,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </insert>
+
+    <select id="findPost" resultMap="BaseResultMap">
+        select p.*,u.photo,u.name from post p LEFT JOIN user u on p.username=u.username where title
+        LIKE "%"#{arg0}"%" order by posttime desc limit #{arg1},10
+    </select>
+
+    <select id="findEssencePost" resultMap="PostResultMapSimple">
+        select id,title,views,postnum from post where grade=1 or grade=3 AND
+        posttime>date_sub(posttime,interval 7 day)
+        order by posttime desc limit 0,5
+    </select>
+
+    <select id="getPostNum" resultType="java.lang.Integer" parameterType="string">
+        SELECT count(id) from post where title like "%"#{arg0}"%"
+    </select>
+
+    <select id="findHotPost" resultMap="PostResultMapSimple">
+        SELECT id,title,views,postnum from post where posttime>date_sub(posttime,interval 7 day)
+        order by postnum desc limit 0,7
+    </select>
+
+    <select id="findTopPost" resultMap="PostResultMapSimple">
+        select id,title,views,postnum from post where grade>1 AND
+        posttime>date_sub(posttime,interval 7 day)
+        order by posttime desc limit 0,5
+    </select>
+
+    <select id="findThePost" resultMap="BaseResultMap" parameterType="int">
+        select p.*,u.photo,u.name from post p LEFT JOIN user u on p.username=u.username where
+        id=#{arg0}
+    </select>
+
+    <select id="updateViews" parameterType="int">
+        update post set views=views+1 where id=#{arg0}
+    </select>
+    <select id="findNewPostID" resultType="java.lang.Integer">
+        SELECT max(id) from post;
+    </select>
+
+    <select id="addCollectionNum" parameterType="int">
+        update post set collectionnum=collectionnum+1 where id=#{arg0}
+    </select>
+    <select id="subCollectionNum" parameterType="int">
+        update post set collectionnum=collectionnum-1 where id=#{arg0}
+    </select>
+
+    <update id="addPostnum" parameterType="int">
+        update post set postnum=postnum+1 where id=#{arg0}
+    </update>
+
+    <update id="subPostnum" parameterType="int">
+        update post set postnum=postnum-1 where id=#{arg0}
+    </update>
+
+    <resultMap id="PostResultMap" type="com.thorn.springboot.model.post">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="username" property="username"/>
+        <result column="type" property="type"/>
+        <result column="grade" property="grade"/>
+        <result column="posttime" property="posttime"/>
+        <result column="postnum" property="postnum"/>
+        <result column="lastposttime" property="lastposttime"/>
+        <result column="views" property="views"/>
+    </resultMap>
+    <resultMap id="ReplyResultMap" type="com.thorn.springboot.model.reply">
+        <id column="id" property="id"/>
+        <id column="floor" property="floor"/>
+        <id column="floorex" property="floorex"/>
+        <id column="content" property="content"/>
+        <id column="replyer" property="replyer"/>
+        <id column="replytime" property="replytime"/>
+        <id column="lastfloor" property="lastfloor"/>
+    </resultMap>
+
+    <select id="getReply" resultMap="ReplyResultMap"
+            parameterType="com.thorn.springboot.model.reply">
+        SELECT reply.postid,reply.floor,reply.floorex,reply.content,
+        reply.replyer,reply.replytime,reply.lastfloor FROM reply,post
+        WHERE postid=id AND replyer!=#{arg0} AND username=#{arg0}
+        UNION
+        select * from reply
+        where (floor,postid) in(SELECT DISTINCT
+        floor,
+        postid
+        FROM
+        reply
+        LEFT JOIN post ON id = postid
+        WHERE
+        floorex =- 1
+        AND replyer = #{arg0}) and floorex!=-1 and replyer!=#{arg0}
+        ORDER BY replytime DESC
+    </select>
+
+    <select id="getMyCollect" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from post where id =#{id}
+    </select>
+
+    <select id="getMyHistory" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from post where id =#{id}
+    </select>
+
+    <select id="findSomePost" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from post where title like #{name}
+    </select>
+
+    <select id="getPostByPageName" resultType="com.thorn.springboot.model.post">
+        select * from post where title like #{arg0} limit #{arg1},#{arg2}
+    </select>
+
+    <select id="getMyPost" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from Post where username=#{arg0}
+    </select>
+
+    <select id="getMyPostAndPage" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from Post where username=#{arg0} limit #{arg1},#{arg2}
+    </select>
+
+    <select id="findAllPost" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from Post
+    </select>
+
+    <select id="getPostByPage" resultMap="PostResultMap"
+            parameterType="com.thorn.springboot.model.post">
+        select * from post limit #{arg0},#{arg1}
+    </select>
+
+    <update id="detelePost" parameterType="com.thorn.springboot.model.post">
+        delete from post where id=#{id}
+    </update>
+
+    <update id="deteleReply" parameterType="com.thorn.springboot.model.post">
+        delete from Reply where postid=#{id}
+    </update>
+
+    <update id="stick" parameterType="com.thorn.springboot.model.post">
+        update post set grade=2 where id=#{id}
+    </update>
+
+    <update id="good" parameterType="com.thorn.springboot.model.post">
+        update post set grade=1 where id=#{id}
+    </update>
+
+    <update id="stickandgood" parameterType="com.thorn.springboot.model.post">
+        update post set grade=3 where id=#{id}
+    </update>
+
+    <update id="cancel" parameterType="com.thorn.springboot.model.post">
+        update post set grade=0 where id=#{id}
+    </update>
+
+    <update id="decCollectNum" parameterType="com.thorn.springboot.model.post">
+        update post set collectionnum=collectionnum-1 where id=#{id}
+    </update>
+
+    <update id="detelePost2" parameterType="com.thorn.springboot.model.post">
+        delete from post where username=#{arg0}
+    </update>
+</mapper>

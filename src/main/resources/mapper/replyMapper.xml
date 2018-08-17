@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thorn.springboot.dao.replyMapper">
+    <resultMap id="BaseResultMap" type="com.thorn.springboot.model.reply">
+        <constructor>
+            <arg column="postid" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="floor" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="floorex" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="replyer" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="replytime" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+            <arg column="lastfloor" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="ResultMapWithBLOBs" type="com.thorn.springboot.model.reply">
+        <constructor>
+            <arg column="postid" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="floor" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="floorex" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="replyer" javaType="java.lang.String" jdbcType="VARCHAR"/>
+            <arg column="replytime" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+            <arg column="lastfloor" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+            <arg column="content" javaType="java.lang.String" jdbcType="LONGVARCHAR"/>
+        </constructor>
+        <association property="user" column="replyer"
+                     javaType="com.thorn.springboot.model.user" foreignColumn="username">
+            <id property="username" column="username"/>
+            <result column="name" property="name"/>
+            <result column="photo" property="photo"/>
+        </association>
+    </resultMap>
+    <sql id="Blob_Column_List">
+        content
+    </sql>
+
+    <insert id="insert" parameterType="com.thorn.springboot.model.reply">
+        insert into reply (postid, floor,replyer, replytime, content)
+        values (#{postid}, #{floor},#{replyer}, #{replytime}, #{content})
+    </insert>
+    <insert id="insertSelective" parameterType="com.thorn.springboot.model.reply">
+        insert into reply
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="postid != null">
+                postid,
+            </if>
+            <if test="floor != null">
+                floor,
+            </if>
+            <if test="floorex != null">
+                floorex,
+            </if>
+            <if test="replyer != null">
+                replyer,
+            </if>
+            <if test="replytime != null">
+                replytime,
+            </if>
+            <if test="lastfloor != null">
+                lastfloor,
+            </if>
+            <if test="content != null">
+                content,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="postid != null">
+                #{postid,jdbcType=INTEGER},
+            </if>
+            <if test="floor != null">
+                #{floor,jdbcType=INTEGER},
+            </if>
+            <if test="floorex != null">
+                #{floorex,jdbcType=INTEGER},
+            </if>
+            <if test="replyer != null">
+                #{replyer,jdbcType=VARCHAR},
+            </if>
+            <if test="replytime != null">
+                #{replytime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="lastfloor != null">
+                #{lastfloor,jdbcType=INTEGER},
+            </if>
+            <if test="content != null">
+                #{content,jdbcType=LONGVARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <select id="getReplyTop" resultMap="ResultMapWithBLOBs" parameterType="int">
+        SELECT r.*,u.name,u.photo from reply r LEFT JOIN user u on r.replyer=u.username where
+        postid =#{arg0} and floorex=-1 and floor!=0 ORDER BY floor limit #{arg1},8
+    </select>
+
+    <select id="getReplySub" resultMap="ResultMapWithBLOBs" parameterType="int">
+        SELECT r.*,u.name,u.photo from reply r LEFT JOIN user u on r.replyer=u.username where
+        postid =#{arg0} and floorex!=-1 and floor &lt;= #{arg1} ORDER BY floor ,floorex
+    </select>
+
+    <select id="getReplyNum" resultType="java.lang.Integer" parameterType="int">
+        SELECT count(postid) from reply where postid=#{arg0} and floorex=-1
+    </select>
+
+    <select id="getTop" resultMap="ResultMapWithBLOBs" parameterType="int">
+        SELECT r.*,u.name,u.photo from reply r LEFT JOIN user u on r.replyer=u.username where
+        postid =#{arg0} and floor=0;
+    </select>
+
+    <insert id="newreply" parameterType="com.thorn.springboot.model.reply">
+        insert into reply (postid,floor,replyer,replytime,content)
+        SELECT #{postid},max(floor)+1,#{replyer},#{replytime},#{content} from reply where
+        postid=#{postid}
+    </insert>
+
+    <update id="addlastfloor">
+        update reply set lastfloor=lastfloor+1 where postid=#{arg0} and floor={1} and
+        floorex={2}
+    </update>
+
+    <delete id="delreply" parameterType="com.thorn.springboot.model.reply">
+        DELETE from reply where postid=#{postid} and floor=#{floor}
+    </delete>
+
+    <select id="getTheSubReplyNum" parameterType="com.thorn.springboot.model.reply"
+            resultType="int">
+        select max(floorex) from reply where postid=#{postid} and floor=#{floor}
+    </select>
+    <insert id="newSubReply" parameterType="com.thorn.springboot.model.reply">
+        insert into reply (postid,floor,floorex,content,replyer,replytime)
+        values(#{postid},#{floor},#{floorex},#{content},#{replyer},#{replytime})
+    </insert>
+
+    <select id="findTheParentReplyer" resultType="java.lang.String"
+            parameterType="com.thorn.springboot.model.reply">
+        select replyer from reply where postid=#{postid} and floor=#{floor} and floorex=-1
+    </select>
+
+    <delete id="delSubReply" parameterType="com.thorn.springboot.model.reply">
+        delete from reply where postid=#{postid} and floor=#{floor} and floorex=#{floorex}
+    </delete>
+
+    <select id="getMaxReplyNum" parameterType="int" resultType="int">
+        SELECT max(floor) from reply where postid=#{arg0}
+    </select>
+
+    <select id="deteleReply2" resultMap="ResultMapWithBLOBs"
+            parameterType="com.thorn.springboot.model.reply">
+        DELETE FROM reply WHERE postid IN (SELECT DISTINCT id FROM post WHERE username =#{arg0})
+    </select>
+
+    <update id="deleteReply" parameterType="com.thorn.springboot.model.reply">
+        DELETE FROM reply WHERE replyer=#{arg0}
+    </update>
+</mapper>
