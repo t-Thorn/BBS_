@@ -4,6 +4,10 @@ import com.thorn.springboot.dao.postMapper;
 import com.thorn.springboot.model.post;
 import com.thorn.springboot.model.reply;
 import com.thorn.springboot.model.userWithBLOBs;
+import com.thorn.springboot.util.serizlize;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -38,32 +42,45 @@ public class PostController {
                           @ModelAttribute("userSession") userWithBLOBs user,
                           @RequestParam String content, Model model
             , RedirectAttributes redirectAttributes) {
-        //logger.info(post.getTitle());
-        //logger.info(post.getType());
-        //logger.info(content);
+        try {
 
-        post.setUsername(user.getUsername());
-        post.setPosttime(new Date());
-        post.setLastposttime(new Date());
-        postmapper.insert(post);
 
-        int newid = postmapper.findNewPostID();
-        //logger.info(postmapper.findNewPostID());
+            //创建redis
+            RedisClient redisClient = RedisClient.create("redis://localhost:6379/0");
+            StatefulRedisConnection connection = redisClient.connect();
+            RedisCommands<String, String> commands = connection.sync();
 
-        user.setMyPostnum(user.getMyPostnum() + 1);
-        userMapper.updateMyPostnum(user);
+            post.setUsername(user.getUsername());
+            post.setPosttime(new Date());
+            post.setLastposttime(new Date());
+            postmapper.insert(post);
 
-        reply reply = new reply();
-        reply.setPostid(newid);
-        reply.setContent(content);
-        reply.setFloor(0);
-        reply.setReplyer(user.getUsername());
-        reply.setReplytime(new Date());
+            int newid = postmapper.findNewPostID();
+            //logger.info(postmapper.findNewPostID());
 
-        replyMapper.insert(reply);
-        redirectAttributes.addAttribute("param", newid);
-        logger.debug("newid:" + newid);
+            user.setMyPostnum(user.getMyPostnum() + 1);
+            userMapper.updateMyPostnum(user);
+
+            reply reply = new reply();
+            reply.setPostid(newid);
+            reply.setContent(content);
+            reply.setFloor(0);
+            reply.setReplyer(user.getUsername());
+            reply.setReplytime(new Date());
+
+            replyMapper.insert(reply);
+            redirectAttributes.addAttribute("param", newid);
+            logger.debug("newid:" + newid);
+            serizlize serizlize = new serizlize();
+            commands.set("posts", new String(serizlize.serialize(postmapper.findPost("")),
+                    "ISO-8859-1"));//新增时修改redis的数据
+            commands.expire("posts", 1800);//30分钟过期
+            connection.close();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
         return "redirect:/BBS/post";
+
     }
 
 
