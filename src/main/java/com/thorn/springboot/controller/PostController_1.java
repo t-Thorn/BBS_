@@ -213,6 +213,8 @@ public class PostController_1 {
             commands.set("posts", new String(serizlize.serialize(postMapper.findPost("")),
                     "ISO-8859-1"));//新增时修改redis的数据
             commands.expire("posts", 1800);//30分钟过期
+            connection.close();
+            redisClient.shutdown();
         } catch (Exception e) {
             // TODO: handle exception
         }
@@ -289,9 +291,12 @@ public class PostController_1 {
                         "ISO-8859-1"));//新增时修改redis的数据
                 commands.expire("posts", 1800);//30分钟过期
             }
+            connection.close();
+            redisClient.shutdown();
         } catch (Exception e) {
             // TODO: handle exception
         }
+
         return "redirect:/user/postnum2";
     }
     //用户发的帖子

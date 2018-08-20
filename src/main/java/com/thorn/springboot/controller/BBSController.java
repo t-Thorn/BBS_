@@ -26,24 +26,19 @@ public class BBSController {
 
     @GetMapping("/")
     public String hello() {
-        System.out.println(4546);
         return "forward:/BBS/page";
     }
 
     @ModelAttribute
     public void preprocess(Model model) {
-        System.out.println(6);
         try {
             RedisClient redisClient = RedisClient.create("redis://localhost:6379/0");
-            System.out.println(6);
             StatefulRedisConnection connection = redisClient.connect();
             RedisCommands<String, String> commands = connection.sync();
-            System.out.println(6);
             List<post> EssencePosts = new ArrayList<post>();//精品帖
             List<post> HotPosts = new ArrayList<post>();//热帖
             List<post> TopPosts = new ArrayList<post>();//置顶帖
             serizlize serizlize = new serizlize();
-            System.out.println(7);
             if (commands.exists("EssencePosts") == 1) {
                 EssencePosts = (List<post>) serizlize.unserizlize(commands.get("EssencePosts")
                         .getBytes("ISO-8859-1"));//获得缓存的精品贴
@@ -74,8 +69,8 @@ public class BBSController {
                         "ISO-8859-1"));//设置置顶贴到redis
                 commands.expire("TopPosts", 1800);//30分钟过期
             }
-            System.out.println(8);
             connection.close();
+            redisClient.shutdown();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -89,7 +84,6 @@ public class BBSController {
                         @RequestParam(required = false, defaultValue = "0") int method,
                         @RequestParam(required = false, defaultValue = "") String content,
                         Model model) {
-        System.out.println(111);
         try {
             //创建redis
             RedisClient redisClient = RedisClient.create("redis://localhost:6379/0");
@@ -148,12 +142,12 @@ public class BBSController {
                 }
                 posts = (List<post>) serizlize.unserizlize(commands.get("posts").
                         getBytes("ISO-8859-1"));//获得缓存
-                System.out.println(posts.get(posts.size() - 1).getTitle());
                 posts = posts.subList((param - 1) * 10, posts.size() > param * 10 ? param * 10 : posts.size());
                 //model.addAttribute("posts", postMapper.findPost(content, (param - 1) * 10));
                 model.addAttribute("posts", posts);
             }
             connection.close();
+            redisClient.shutdown();
         } catch (Exception e) {
 
         }

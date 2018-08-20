@@ -6,6 +6,8 @@ spring:
 #公共配置与profiles选择无关
 mybatis:
     mapper-locations: classpath:**/mapper/*.xml
+    configuration:
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 logging:
   level:

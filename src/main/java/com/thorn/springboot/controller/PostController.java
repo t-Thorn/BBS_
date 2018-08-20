@@ -76,6 +76,7 @@ public class PostController {
                     "ISO-8859-1"));//新增时修改redis的数据
             commands.expire("posts", 1800);//30分钟过期
             connection.close();
+            redisClient.shutdown();
         } catch (Exception e) {
             // TODO: handle exception
         }
