@@ -102,7 +102,7 @@
 
     <select id="findPost" resultMap="BaseResultMap">
         select p.*,u.photo,u.name from post p LEFT JOIN user u on p.username=u.username where title
-        LIKE "%"#{arg0}"%" order by posttime desc limit #{arg1},10
+        LIKE "%"#{arg0}"%" order by posttime
     </select>
 
     <select id="findEssencePost" resultMap="PostResultMapSimple">

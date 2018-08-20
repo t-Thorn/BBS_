@@ -1,8 +1,10 @@
 package com.thorn.springboot.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class post {
+public class post implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Integer id;
 
     private String title;

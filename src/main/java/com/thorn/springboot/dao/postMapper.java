@@ -12,7 +12,7 @@ public interface postMapper {
 
     int insertSelective(post record);
 
-    List<post> findPost(String content, int page);//-1*10
+    List<post> findPost(String content);//-1*10
 
     List<post> findEssencePost();
 

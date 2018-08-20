@@ -5,6 +5,10 @@ import com.thorn.springboot.dao.userMapper;
 import com.thorn.springboot.model.post;
 import com.thorn.springboot.model.reply;
 import com.thorn.springboot.model.userWithBLOBs;
+import com.thorn.springboot.util.serizlize;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -153,52 +157,64 @@ public class PostController_1 {
     @GetMapping(value = "OA/deletepost")
     public String deletepost(@RequestParam(value = "id") String id, String username, Model model) {
         // System.out.println(username);
-        System.out.println("-----------id:" + id);
-        model.addAttribute("username", username);
-        postMapper.detelePost(Integer.parseInt(id));
-        postMapper.deteleReply(Integer.parseInt(id));
-        //删除收藏中的信息
-        List<userWithBLOBs> userWithBLOBs = userMapper.findAllUsers();
-        for (int i = 0; i < userWithBLOBs.size(); i++) {
-            String collect = userWithBLOBs.get(i).getCollections();
+        serizlize serizlize = new serizlize();
+        try {
+            RedisClient redisClient = RedisClient.create("redis://localhost:6379/0");
+            StatefulRedisConnection connection = redisClient.connect();
+            RedisCommands<String, String> commands = connection.sync();
 
-            if (collect != null && !collect.equals("")) {
+            System.out.println("-----------id:" + id);
+            model.addAttribute("username", username);
+            postMapper.detelePost(Integer.parseInt(id));
+            postMapper.deteleReply(Integer.parseInt(id));
+            //删除收藏中的信息
+            List<userWithBLOBs> userWithBLOBs = userMapper.findAllUsers();
+            for (int i = 0; i < userWithBLOBs.size(); i++) {
+                String collect = userWithBLOBs.get(i).getCollections();
 
-                String[] collects = collect.split(";");
-                collect = "";
-                for (int j = 0; j < collects.length; j++) {
-                    if (!collects[j].equals(id)) {
-                        if (j == collects.length - 1) {
-                            collect += collects[j];
-                        } else {
-                            collect += collects[j] + ";";
+                if (collect != null && !collect.equals("")) {
+
+                    String[] collects = collect.split(";");
+                    collect = "";
+                    for (int j = 0; j < collects.length; j++) {
+                        if (!collects[j].equals(id)) {
+                            if (j == collects.length - 1) {
+                                collect += collects[j];
+                            } else {
+                                collect += collects[j] + ";";
+                            }
+                        }
+                    }
+                    userWithBLOBs.get(i).setCollections(collect);
+                    userMapper.updateCollections(userWithBLOBs.get(i));
+                }
+            }
+
+
+            //删除历史纪录中的信息
+            for (int i = 0; i < userWithBLOBs.size(); i++) {
+                String collect = userWithBLOBs.get(i).getHistory();
+                if (collect != null && !collect.equals("")) {
+                    String[] collects = collect.split(";");
+                    collect = "";
+                    for (int j = 0; j < collects.length; j++) {
+                        if (!collects[j].equals(id)) {
+                            if (j == collects.length - 1) {
+                                collect += collects[j];
+                            } else {
+                                collect += collects[j] + ";";
+                            }
                         }
                     }
                 }
-                userWithBLOBs.get(i).setCollections(collect);
-                userMapper.updateCollections(userWithBLOBs.get(i));
+                userWithBLOBs.get(i).setHistory(collect);
+                userMapper.updateHistory(userWithBLOBs.get(i));
             }
-        }
-
-
-        //删除历史纪录中的信息
-        for (int i = 0; i < userWithBLOBs.size(); i++) {
-            String collect = userWithBLOBs.get(i).getHistory();
-            if (collect != null && !collect.equals("")) {
-                String[] collects = collect.split(";");
-                collect = "";
-                for (int j = 0; j < collects.length; j++) {
-                    if (!collects[j].equals(id)) {
-                        if (j == collects.length - 1) {
-                            collect += collects[j];
-                        } else {
-                            collect += collects[j] + ";";
-                        }
-                    }
-                }
-            }
-            userWithBLOBs.get(i).setHistory(collect);
-            userMapper.updateHistory(userWithBLOBs.get(i));
+            commands.set("posts", new String(serizlize.serialize(postMapper.findPost("")),
+                    "ISO-8859-1"));//新增时修改redis的数据
+            commands.expire("posts", 1800);//30分钟过期
+        } catch (Exception e) {
+            // TODO: handle exception
         }
         return "redirect:/user/postnum";
     }
@@ -207,65 +223,77 @@ public class PostController_1 {
     @GetMapping(value = "user/deletepost")
     public String userdeletepost(@RequestParam(value = "id") String id, String username, Model model, @ModelAttribute
             (value = "userSession") userWithBLOBs user) {
-        // System.out.println(username);
+        try {
+            serizlize serizlize = new serizlize();
+            //创建redis
+            RedisClient redisClient = RedisClient.create("redis://localhost:6379/0");
+            StatefulRedisConnection connection = redisClient.connect();
+            RedisCommands<String, String> commands = connection.sync();
 
-        model.addAttribute("username", username);
-        postMapper.detelePost(Integer.parseInt(id));
-        postMapper.deteleReply(Integer.parseInt(id));
+            // System.out.println(username);
 
-        //删除收藏中的信息
-        List<userWithBLOBs> userWithBLOBs = userMapper.findAllUsers();
-        for (int i = 0; i < userWithBLOBs.size(); i++) {
-            String collect = userWithBLOBs.get(i).getCollections();
+            model.addAttribute("username", username);
+            postMapper.detelePost(Integer.parseInt(id));
+            postMapper.deteleReply(Integer.parseInt(id));
 
-            if (collect != null && !collect.equals("")) {
+            //删除收藏中的信息
+            List<userWithBLOBs> userWithBLOBs = userMapper.findAllUsers();
+            for (int i = 0; i < userWithBLOBs.size(); i++) {
+                String collect = userWithBLOBs.get(i).getCollections();
 
-                String[] collects = collect.split(";");
-                collect = "";
-                for (int j = 0; j < collects.length; j++) {
-                    if (!collects[j].equals(id)) {
-                        if (j == collects.length - 1) {
-                            collect += collects[j];
-                        } else {
-                            collect += collects[j] + ";";
+                if (collect != null && !collect.equals("")) {
+
+                    String[] collects = collect.split(";");
+                    collect = "";
+                    for (int j = 0; j < collects.length; j++) {
+                        if (!collects[j].equals(id)) {
+                            if (j == collects.length - 1) {
+                                collect += collects[j];
+                            } else {
+                                collect += collects[j] + ";";
+                            }
                         }
+
                     }
-
-                }
-                userWithBLOBs.get(i).setCollections(collect);
-                userMapper.updateCollections(userWithBLOBs.get(i));
-            }
-        }
-
-
-        //删除历史纪录中的信息
-        for (int i = 0; i < userWithBLOBs.size(); i++) {
-            String collect = userWithBLOBs.get(i).getHistory();
-            if (collect != null && !collect.equals("")) {
-                String[] collects = collect.split(";");
-                collect = "";
-                for (int j = 0; j < collects.length; j++) {
-                    if (!collects[j].equals(id)) {
-                        if (j == collects.length - 1) {
-                            collect += collects[j];
-                        } else {
-                            collect += collects[j] + ";";
-                        }
-                    }
-                }
-                if (user.getUsername() == userWithBLOBs.get(i).getUsername()) {
-                    user.setHistory(collect);
+                    userWithBLOBs.get(i).setCollections(collect);
+                    userMapper.updateCollections(userWithBLOBs.get(i));
                 }
             }
 
-            userWithBLOBs.get(i).setHistory(collect);
-            userMapper.updateHistory(userWithBLOBs.get(i));
 
-            model.addAttribute("userSession", user);
+            //删除历史纪录中的信息
+            for (int i = 0; i < userWithBLOBs.size(); i++) {
+                String collect = userWithBLOBs.get(i).getHistory();
+                if (collect != null && !collect.equals("")) {
+                    String[] collects = collect.split(";");
+                    collect = "";
+                    for (int j = 0; j < collects.length; j++) {
+                        if (!collects[j].equals(id)) {
+                            if (j == collects.length - 1) {
+                                collect += collects[j];
+                            } else {
+                                collect += collects[j] + ";";
+                            }
+                        }
+                    }
+                    if (user.getUsername() == userWithBLOBs.get(i).getUsername()) {
+                        user.setHistory(collect);
+                    }
+                }
+
+                userWithBLOBs.get(i).setHistory(collect);
+                userMapper.updateHistory(userWithBLOBs.get(i));
+
+                model.addAttribute("userSession", user);
+                commands.set("posts", new String(serizlize.serialize(postMapper.findPost("")),
+                        "ISO-8859-1"));//新增时修改redis的数据
+                commands.expire("posts", 1800);//30分钟过期
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
         }
         return "redirect:/user/postnum2";
     }
-
     //用户发的帖子
     @GetMapping(value = "user/mypost")
     public String mypost(@ModelAttribute("userSession") userWithBLOBs user, Model model, String page) {

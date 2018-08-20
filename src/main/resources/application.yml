@@ -32,5 +32,8 @@ spring:
 
 logging:
   config: classpath:log4j2.yml
-  level: debug
+  level:
+    com:
+      looedu:
+        mapper: debug
 
